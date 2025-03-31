@@ -1,0 +1,29 @@
+{
+    "name": "fernando-marquardt/valithor",
+    "description": "A schema validation library for PHP, inspired by Zod",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Fernando Marquardt",
+            "email": "fernando.marquardt@gmail.com"
+        }
+    ],
+    "scripts": {
+        "test": "pest --colors=always"
+    },
+    "autoload": {
+        "psr-4": {
+            "Valithor\\": "src/"
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "require-dev": {
+        "pestphp/pest": "^3.7",
+        "mockery/mockery": "^1.6"
+    }
+}
