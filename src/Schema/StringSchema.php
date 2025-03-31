@@ -7,7 +7,6 @@ use Valithor\Exception\InvalidStringException;
 use Valithor\Schema;
 
 /**
- * @template T
  * @extends Schema<string>
  */
 class StringSchema extends Schema
@@ -72,7 +71,7 @@ class StringSchema extends Schema
     }
 
     /**
-     * @param string $data
+     * @param string|null $data
      * @return string
      * @throws InvalidStringException If the data value is not valid.
      */

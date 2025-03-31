@@ -9,14 +9,13 @@ use Valithor\Exception\SchemaException;
 use Valithor\Schema;
 
 /**
- * @template T
  * @extends Schema<object>
  */
 class ObjectSchema extends Schema
 {
     public function __construct(
         /**
-         * @var Schema[]
+         * @var array<string,Schema<mixed>>
          */
         private array $schemas = [],
     )
@@ -24,7 +23,7 @@ class ObjectSchema extends Schema
     }
 
     /**
-     * @param Schema[] $schemas
+     * @param Schema<mixed>[] $schemas
      * @return $this
      */
     public function extend(array|ObjectSchema $schemas): self
@@ -39,7 +38,7 @@ class ObjectSchema extends Schema
     }
 
     /**
-     * @param object|array $data
+     * @param object|array<string, mixed> $data
      * @return object
      * @throws InvalidObjectException If the data object has any invalid element.
      */
