@@ -18,22 +18,12 @@ abstract class Schema
     protected bool $required = true;
 
     /**
-     * @var T|callable():T
+     * @var (callable():T)|T|null
      */
-    protected mixed $defaultValue = null {
-        set => $this->defaultValue = $value;
-
-        get {
-            if (is_callable($this->defaultValue)) {
-                return call_user_func($this->defaultValue);
-            }
-
-            return $this->defaultValue;
-        }
-    }
+    protected mixed $defaultValue = null;
 
     /**
-     * @var callable(T):string[]
+     * @var (callable(T):(string|null))[]
      */
     private array $checks = [];
 
@@ -66,7 +56,7 @@ abstract class Schema
      * Check if the data is valid. If it is, the value is returned, otherwise an error is thrown.
      *
      * @param T $data
-     * @return T
+     * @return T|null
      * @throws SchemaException If the data is not valid.
      */
     public function parse(mixed $data): mixed
@@ -74,15 +64,15 @@ abstract class Schema
         $result = $this->parseSafe($data);
 
         if (!$result->isValid()) {
-            throw new InvalidSchemaException($result->issues);
+            throw new InvalidSchemaException($result->issues ?? []);
         }
 
         return $result->value;
     }
 
     /**
-     * @param T $data
-     * @return ValidationResult<T>
+     * @param T|null $data
+     * @return ValidationResult<T>|ValidationResult<null>
      */
     public function parseSafe(mixed $data): ValidationResult
     {
@@ -91,7 +81,7 @@ abstract class Schema
                 return ValidationResult::invalidIssue('', 'The value is required.');
             }
 
-            return ValidationResult::valid($this->defaultValue);
+            return ValidationResult::valid($this->loadDefaultValue());
         }
 
         try {
@@ -120,7 +110,7 @@ abstract class Schema
      * Add a check to be called at the check phase.
      *
      * @param string $name A unique name to identify the check.
-     * @param callable(T):string $callback The check callback.
+     * @param callable(T):(string|null) $callback The check callback.
      * @return void
      */
     protected function check(string $name, callable $callback): void
@@ -145,5 +135,17 @@ abstract class Schema
         }
 
         return $issues;
+    }
+
+    /**
+     * @return T|null
+     */
+    protected function loadDefaultValue(): mixed
+    {
+        if (is_callable($this->defaultValue)) {
+            return call_user_func($this->defaultValue);
+        }
+
+        return $this->defaultValue;
     }
 }

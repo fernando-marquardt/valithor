@@ -25,16 +25,12 @@ class ObjectSchema extends Schema
     }
 
     /**
-     * @param Schema<mixed>[]|ObjectSchema $schemas
+     * @param Array<string, Schema<mixed>>|ObjectSchema $schemas
      * @return $this
      */
     public function extend(array|ObjectSchema $schemas): self
     {
-        if ($schemas instanceof ObjectSchema) {
-            $this->schemas = array_merge($this->schemas, $schemas->schemas);
-        } else {
-            $this->schemas = array_merge($this->schemas, $schemas);
-        }
+        $this->schemas = array_merge($this->schemas, (is_array($schemas)) ? $schemas : $schemas->schemas);
 
         return $this;
     }
@@ -62,10 +58,7 @@ class ObjectSchema extends Schema
             if ($result->isValid()) {
                 $parsedValue->{$key} = $result->value;
             } else {
-                foreach ($result->issues as $issue) {
-                    $path = implode('.', array_filter([$key, $issue->path]));
-                    $issues[] = Issue::make($path, $issue->message);
-                }
+                array_push($issues, ...$this->parseIssues($key, $result->issues ?? []));
             }
         }
 
@@ -74,5 +67,19 @@ class ObjectSchema extends Schema
         }
 
         return $parsedValue;
+    }
+
+    /**
+     * @param string $path
+     * @param Issue[] $issues
+     * @return Issue[]
+     */
+    private function parseIssues(string $path, array $issues): array
+    {
+        return array_map(function ($issue) use ($path) {
+            $path = implode('.', array_filter([$path, $issue->path]));
+
+            return Issue::make($path, $issue->message);
+        }, $issues);
     }
 }

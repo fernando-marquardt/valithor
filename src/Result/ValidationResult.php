@@ -10,8 +10,8 @@ readonly class ValidationResult
 {
     /**
      * @param bool $valid
-     * @param T $value
-     * @param Issue[]|null $issues
+     * @param T|null $value
+     * @param ($valid is false ? Issue[] : null) $issues
      */
     private function __construct(
         private bool $valid,
@@ -27,8 +27,9 @@ readonly class ValidationResult
     }
 
     /**
-     * @param T $value
-     * @return self
+     * @template R
+     * @param R|null $value
+     * @return self<R>
      */
     public static function valid(mixed $value): self
     {
@@ -37,13 +38,18 @@ readonly class ValidationResult
 
     /**
      * @param Issue[] $issues
-     * @return self
+     * @return self<null>
      */
     public static function invalid(array $issues): self
     {
         return new self(false, issues: $issues);
     }
 
+    /**
+     * @param string $path
+     * @param string $message
+     * @return self<null>
+     */
     public static function invalidIssue(string $path, string $message): self
     {
         return self::invalid([Issue::make($path, $message)]);

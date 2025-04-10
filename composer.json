@@ -10,7 +10,7 @@
         }
     ],
     "scripts": {
-        "analyse": "phpstan analyse src --level 6 --ansi",
+        "analyse": "phpstan analyse --ansi",
         "test": "pest --colors=always"
     },
     "autoload": {
