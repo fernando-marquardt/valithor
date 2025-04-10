@@ -3,9 +3,11 @@ declare(strict_types=1);
 
 namespace Valithor\Schema;
 
+use ArrayObject;
+use Override;
 use stdClass;
 use Valithor\Exception\InvalidObjectException;
-use Valithor\Exception\SchemaException;
+use Valithor\Result\Issue;
 use Valithor\Schema;
 
 /**
@@ -17,13 +19,13 @@ class ObjectSchema extends Schema
         /**
          * @var array<string,Schema<mixed>>
          */
-        private array $schemas = [],
+        private array $schemas,
     )
     {
     }
 
     /**
-     * @param Schema<mixed>[] $schemas
+     * @param Schema<mixed>[]|ObjectSchema $schemas
      * @return $this
      */
     public function extend(array|ObjectSchema $schemas): self
@@ -42,17 +44,28 @@ class ObjectSchema extends Schema
      * @return object
      * @throws InvalidObjectException If the data object has any invalid element.
      */
+    #[Override]
     protected function parseData(mixed $data): object
     {
+        if (!is_object($data) && !is_array($data)) {
+            throw InvalidObjectException::invalidType(gettype($data));
+        }
+
+        $data = new ArrayObject($data);
         $parsedValue = new stdClass();
 
         $issues = [];
 
         foreach ($this->schemas as $key => $schema) {
-            try {
-                $parsedValue->{$key} = $schema->parse($data[$key] ?? null);
-            } catch (SchemaException $e) {
-                $issues[$key] = $e->getMessage();
+            $result = $schema->parseSafe($data[$key] ?? null);
+
+            if ($result->isValid()) {
+                $parsedValue->{$key} = $result->value;
+            } else {
+                foreach ($result->issues as $issue) {
+                    $path = implode('.', array_filter([$key, $issue->path]));
+                    $issues[] = Issue::make($path, $issue->message);
+                }
             }
         }
 

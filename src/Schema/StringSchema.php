@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Valithor\Schema;
 
+use Override;
 use Valithor\Exception\InvalidStringException;
 use Valithor\Schema;
 
@@ -22,10 +23,10 @@ class StringSchema extends Schema
     {
         $this->check('min', function (string $value) use ($min, $message) {
             if (strlen($value) < $min) {
-                return $message ?? 'String value must contain at least {' . $min . '} character(s).';
+                return $message ?? 'Value must contain at least {' . $min . '} character(s).';
             }
 
-            return true;
+            return null;
         });
 
         return $this;
@@ -42,10 +43,10 @@ class StringSchema extends Schema
     {
         $this->check('max', function (string $value) use ($max, $message) {
             if (strlen($value) > $max) {
-                return $message ?? 'String value must contain at most {' . $max . '} character(s).';
+                return $message ?? 'Value must contain at most {' . $max . '} character(s).';
             }
 
-            return true;
+            return null;
         });
 
         return $this;
@@ -61,38 +62,27 @@ class StringSchema extends Schema
     {
         $this->check('email', function (string $value) use ($message) {
             if (filter_var($value, FILTER_VALIDATE_EMAIL) === false) {
-                return $message ?? 'String value must contain a valid email address.';
+                return $message ?? 'Value must contain a valid email address.';
             }
 
-            return true;
+            return null;
         });
 
         return $this;
     }
 
     /**
-     * @param string|null $data
+     * @param string $data
      * @return string
-     * @throws InvalidStringException If the data value is not valid.
+     * @throws InvalidStringException When the provided $data is not a string.
      */
-    protected function parseData(mixed $data): string
+    #[Override]
+    public function parseData(mixed $data): string
     {
-        if ($data === null && $this->required) {
-            throw new InvalidStringException(['String value is required.']);
-        }
-
         if (!is_string($data)) {
-            throw new InvalidStringException(['String value must be a string.']);
+            throw InvalidStringException::invalidType(gettype($data));
         }
 
-        $data = (string)$data;
-
-        list($valid, $issues) = $this->runChecks($data);
-
-        if (!$valid) {
-            throw new InvalidStringException($issues);
-        }
-
-        return $data;
+        return (string)$data;
     }
 }

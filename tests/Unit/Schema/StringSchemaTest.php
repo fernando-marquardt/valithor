@@ -4,36 +4,47 @@ use Valithor\Exception\InvalidStringException;
 use Valithor\Valithor;
 
 describe('min', function () {
-    it('checks for a minimum length', function () {
-        $data = 'test';
-        $result = Valithor::string()->min(4)->parse($data);
+    it('checks a string with expected minimum length', function () {
+        $data = 'John Doe';
+        $result = Valithor::string()->min(4)->parseSafe($data);
 
-        expect($result)->toBe($data);
+        expect($result->isValid())->toBeTrue()
+            ->and($result->value)->toBe($data);
     });
 
-    it('checks for string with length lesser than minimum', function () {
-        Valithor::string()->min(10)->parse('test');
-    })->throws(InvalidStringException::class);
+    it('fails parsing a string with expected minimum length', function () {
+        $result = Valithor::string()->min(10)->parseSafe('John Doe');
+
+        expect($result->isValid())->toBeFalse()
+            ->and($result->issues)->toHaveCount(1)
+            ->and($result->issues[0]?->message)->toBe('Value must contain at least {10} character(s).');
+    });
 });
 
 describe('max', function () {
     it('checks for a max length', function () {
-        $data = 'test';
-        $result = Valithor::string()->max(10)->parse($data);
+        $expected = 'John';
+        $result = Valithor::string()->max(10)->parseSafe($expected);
 
-        expect($result)->toBe($data);
+        expect($result->isValid())->toBeTrue()
+            ->and($result->value)->toBe($expected);
     });
 
     it('checks for string with length higher than maximum', function () {
-        Valithor::string()->max(3)->parse('test');
-    })->throws(InvalidStringException::class);
+        $result = Valithor::string()->max(3)->parseSafe('test');
+
+        expect($result->isValid())->toBeFalse()
+            ->and($result->issues)->toHaveCount(1)
+            ->and($result->issues[0]?->message)->toBe('Value must contain at most {3} character(s).');
+    });
 });
 
 describe('email', function () {
     it('checks for valid email address', function ($email) {
-        $result = Valithor::string()->email()->parse($email);
+        $result = Valithor::string()->email()->parseSafe($email);
 
-        expect($result)->toBe($email);
+        expect($result->isValid())->toBeTrue()
+            ->and($result->value)->toBe($email);
     })->with([
         'test@io.com',
         'test.io@epam.com',
@@ -54,8 +65,12 @@ describe('email', function () {
     ]);
 
     it('checks for invalid email address', function ($email) {
-        Valithor::string()->email()->parse($email);
-    })->throws(InvalidStringException::class)->with([
+        $result = Valithor::string()->email()->parseSafe($email);
+
+        expect($result->isValid())->toBeFalse()
+            ->and($result->issues)->toHaveCount(1)
+            ->and($result->issues[0]?->message)->toBe('Value must contain a valid email address.');
+    })->with([
         'test.io.com',
         'test@io@epam.com',
         'test(io"epam)example]com',
@@ -73,5 +88,9 @@ describe('email', function () {
 });
 
 it('tries to parse non string data', function () {
-    Valithor::string()->parse(4);
-})->throws(InvalidStringException::class);
+    $result = Valithor::string()->parseSafe(4);
+
+    expect($result->isValid())->toBeFalse()
+        ->and($result->issues)->toHaveCount(1)
+        ->and($result->issues[0]?->message)->toBe('Value must be a string, received {integer}.');
+});

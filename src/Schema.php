@@ -3,7 +3,10 @@ declare(strict_types=1);
 
 namespace Valithor;
 
+use Valithor\Exception\InvalidSchemaException;
 use Valithor\Exception\SchemaException;
+use Valithor\Result\Issue;
+use Valithor\Result\ValidationResult;
 
 /**
  * Base class for all schema types.
@@ -15,14 +18,24 @@ abstract class Schema
     protected bool $required = true;
 
     /**
-     * @var mixed|callable():T
+     * @var T|callable():T
      */
-    protected mixed $defaultValue = null;
+    protected mixed $defaultValue = null {
+        set => $this->defaultValue = $value;
+
+        get {
+            if (is_callable($this->defaultValue)) {
+                return call_user_func($this->defaultValue);
+            }
+
+            return $this->defaultValue;
+        }
+    }
 
     /**
-     * @var (callable(T):(bool|string))[]
+     * @var callable(T):string[]
      */
-    protected array $checks = [];
+    private array $checks = [];
 
     /**
      * The current schema becomes optional and won't throw validation messages if no value is loaded.
@@ -58,25 +71,56 @@ abstract class Schema
      */
     public function parse(mixed $data): mixed
     {
-        if (!$this->required && $data === null) {
-            return $this->getDefaultValue();
+        $result = $this->parseSafe($data);
+
+        if (!$result->isValid()) {
+            throw new InvalidSchemaException($result->issues);
         }
 
-        return $this->parseData($data);
+        return $result->value;
+    }
+
+    /**
+     * @param T $data
+     * @return ValidationResult<T>
+     */
+    public function parseSafe(mixed $data): ValidationResult
+    {
+        if ($data === null) {
+            if ($this->required) {
+                return ValidationResult::invalidIssue('', 'The value is required.');
+            }
+
+            return ValidationResult::valid($this->defaultValue);
+        }
+
+        try {
+            $parsedData = $this->parseData($data);
+        } catch (SchemaException $e) {
+            return ValidationResult::invalid($e->issues);
+        }
+
+        $issues = $this->runChecks($parsedData);
+
+        if (count($issues) > 0) {
+            return ValidationResult::invalid($issues);
+        }
+
+        return ValidationResult::valid($parsedData);
     }
 
     /**
      * @param T $data
      * @return T
-     * @throws SchemaException If the data is not valid.
+     * @throws SchemaException
      */
-    abstract protected function parseData(mixed $data): mixed;
+    protected abstract function parseData(mixed $data): mixed;
 
     /**
      * Add a check to be called at the check phase.
      *
      * @param string $name A unique name to identify the check.
-     * @param callable(T):(bool|string) $callback The check callback.
+     * @param callable(T):string $callback The check callback.
      * @return void
      */
     protected function check(string $name, callable $callback): void
@@ -85,33 +129,21 @@ abstract class Schema
     }
 
     /**
-     * @param mixed $data
-     * @return array{bool,string[]} Returns an array with the first element being true if the validation passed and the second with the issues otherwise.
+     * @param T $data
+     * @return Issue[] Returns an array with the first element being true if the validation passed and the second with the issues otherwise.
      */
     protected function runChecks(mixed $data): array
     {
-        $valid = true;
         $issues = [];
 
         foreach ($this->checks as $callback) {
-            if (($issue = call_user_func($callback, $data)) !== true) {
-                $valid = false;
-                $issues[] = $issue;
+            $message = call_user_func($callback, $data);
+
+            if ($message) {
+                $issues[] = Issue::make('', $message);
             }
         }
 
-        return [$valid, $issues];
-    }
-
-    /**
-     * @return T
-     */
-    private function getDefaultValue(): mixed
-    {
-        if (is_callable($this->defaultValue)) {
-            return call_user_func($this->defaultValue);
-        }
-
-        return $this->defaultValue;
+        return $issues;
     }
 }
