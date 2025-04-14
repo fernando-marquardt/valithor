@@ -8,7 +8,6 @@ use Override;
 use stdClass;
 use Valithor\Exception\InvalidObjectException;
 use Valithor\Result\Issue;
-use Valithor\Schema;
 
 /**
  * @extends Schema<object>

@@ -5,7 +5,6 @@ namespace Valithor\Schema;
 
 use Override;
 use Valithor\Exception\InvalidStringException;
-use Valithor\Schema;
 
 /**
  * @extends Schema<string>

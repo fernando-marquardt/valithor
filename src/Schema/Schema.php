@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Valithor;
+namespace Valithor\Schema;
 
 use Valithor\Exception\InvalidSchemaException;
 use Valithor\Exception\SchemaException;

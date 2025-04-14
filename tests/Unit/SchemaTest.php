@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 use Valithor\Exception\InvalidSchemaException;
-use Valithor\Schema;
+use Valithor\Schema\Schema;
 
 beforeEach(function () {
     Mockery::close();
