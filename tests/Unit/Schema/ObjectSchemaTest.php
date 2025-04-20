@@ -1,6 +1,9 @@
 <?php
 
+use Valithor\Schema\ObjectSchema;
 use Valithor\Valithor;
+
+mutates(ObjectSchema::class);
 
 describe('parse', function () {
     it('parses an array with two elements', function () {

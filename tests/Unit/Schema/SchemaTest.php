@@ -1,8 +1,9 @@
 <?php
-declare(strict_types=1);
 
 use Valithor\Exception\InvalidSchemaException;
 use Valithor\Schema\Schema;
+
+mutates(Schema::class);
 
 beforeEach(function () {
     Mockery::close();
@@ -92,5 +93,52 @@ describe('parse', function () {
 
         expect(fn() => $schema->parse(null))
             ->toThrow(InvalidSchemaException::class);
+    });
+});
+
+describe('refinements', function () {
+    it('validates through a refinement', function () {
+        $schema = Mockery::mock(Schema::class)->makePartial();
+        $schema->shouldAllowMockingProtectedMethods();
+
+        $schema->shouldReceive('parseData')->andReturnUsing(fn($value) => $value)->once();
+
+        $expected = 'John Doe';
+
+        $result = $schema->refine(fn($value) => is_string($value))->parseSafe($expected);
+
+        expect($result->isValid())->toBeTrue()
+            ->and($result->issues)->toBeEmpty()
+            ->and($result->value)->toBe($expected);
+    });
+
+    it('fails a refinement', function () {
+        $schema = Mockery::mock(Schema::class)->makePartial();
+        $schema->shouldAllowMockingProtectedMethods();
+
+        $schema->shouldReceive('parseData')->andReturnUsing(fn($value) => $value)->once();
+
+        $expected = 'John Doe';
+
+        $result = $schema->refine(fn($value) => is_null($value), 'Value must be null')->parseSafe($expected);
+
+        expect($result->isValid())->toBeFalse()
+            ->and($result->value)->toBeNull()
+            ->and($result->issues)->toHaveCount(1)
+            ->and($result->issues[0]?->message)->toBe('Value must be null');
+    });
+
+    it('transforms data', function () {
+        $schema = Mockery::mock(Schema::class)->makePartial();
+        $schema->shouldAllowMockingProtectedMethods();
+
+        $schema->shouldReceive('parseData')->andReturnUsing(fn($value) => $value)->once();
+
+        $expected = 'John Doe';
+
+        $result = $schema->transform(fn($value) => $value . ' Doe')->parseSafe('John');
+
+        expect($result->isValid())->toBeTrue()
+            ->and($result->value)->toBe($expected);
     });
 });

@@ -10,7 +10,8 @@ use Valithor\Schema\StringSchema;
 final class Valithor
 {
     /**
-     * @param array<string,Schema<mixed>> $schemas
+     * @template T
+     * @param array<string,Schema<T>> $schemas
      * @return ObjectSchema
      */
     public static function object(array $schemas): ObjectSchema

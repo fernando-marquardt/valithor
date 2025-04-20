@@ -1,7 +1,9 @@
 <?php
 
-use Valithor\Exception\InvalidStringException;
+use Valithor\Schema\StringSchema;
 use Valithor\Valithor;
+
+mutates(StringSchema::class);
 
 describe('min', function () {
     it('checks a string with expected minimum length', function () {

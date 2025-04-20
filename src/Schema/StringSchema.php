@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Valithor\Schema;
 
 use Override;
-use Valithor\Exception\InvalidStringException;
+use Valithor\Parse\ParseContext;
 
 /**
  * @extends Schema<string>
@@ -20,12 +20,10 @@ class StringSchema extends Schema
      */
     public function min(int $min, ?string $message = null): self
     {
-        $this->check('min', function (string $value) use ($min, $message) {
+        $this->check(function (string $value, ParseContext $context) use ($min, $message) {
             if (strlen($value) < $min) {
-                return $message ?? 'Value must contain at least {' . $min . '} character(s).';
+                $context->addIssue($message ?? 'Value must contain at least {' . $min . '} character(s).');
             }
-
-            return null;
         });
 
         return $this;
@@ -40,12 +38,10 @@ class StringSchema extends Schema
      */
     public function max(int $max, ?string $message = null): self
     {
-        $this->check('max', function (string $value) use ($max, $message) {
+        $this->check(function (string $value, ParseContext $context) use ($max, $message) {
             if (strlen($value) > $max) {
-                return $message ?? 'Value must contain at most {' . $max . '} character(s).';
+                $context->addIssue($message ?? 'Value must contain at most {' . $max . '} character(s).');
             }
-
-            return null;
         });
 
         return $this;
@@ -59,27 +55,26 @@ class StringSchema extends Schema
      */
     public function email(?string $message = null): self
     {
-        $this->check('email', function (string $value) use ($message) {
+        $this->check(function (string $value, ParseContext $context) use ($message) {
             if (filter_var($value, FILTER_VALIDATE_EMAIL) === false) {
-                return $message ?? 'Value must contain a valid email address.';
+                $context->addIssue($message ?? 'Value must contain a valid email address.');
             }
-
-            return null;
         });
 
         return $this;
     }
 
     /**
-     * @param string $data
-     * @return string
-     * @throws InvalidStringException When the provided $data is not a string.
+     * @param mixed $data
+     * @param ParseContext $context
+     * @return string|null
      */
     #[Override]
-    public function parseData(mixed $data): string
+    protected function parseData(mixed $data, ParseContext $context): string|null
     {
         if (!is_string($data)) {
-            throw InvalidStringException::invalidType(gettype($data));
+            $context->addIssue('Value must be a string, received {' . gettype($data) . '}.');
+            return null;
         }
 
         return (string)$data;

@@ -6,11 +6,11 @@ namespace Valithor\Result;
 /**
  * @template T
  */
-readonly class ValidationResult
+readonly class ParsingResult
 {
     /**
      * @param bool $valid
-     * @param T|null $value
+     * @param ($valid is true ? T|null : null) $value
      * @param ($valid is false ? Issue[] : null) $issues
      */
     private function __construct(
@@ -43,15 +43,5 @@ readonly class ValidationResult
     public static function invalid(array $issues): self
     {
         return new self(false, issues: $issues);
-    }
-
-    /**
-     * @param string $path
-     * @param string $message
-     * @return self<null>
-     */
-    public static function invalidIssue(string $path, string $message): self
-    {
-        return self::invalid([Issue::make($path, $message)]);
     }
 }
